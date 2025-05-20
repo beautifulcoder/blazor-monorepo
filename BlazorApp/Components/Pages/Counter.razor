@@ -1,0 +1,45 @@
+@page "/counter"
+@rendermode InteractiveServer
+@using DataAccess
+@using Microsoft.EntityFrameworkCore
+@implements IDisposable
+@inject IDbContextFactory<AppDbContext> DbContextFactory
+@using CounterItem = DataAccess.Counter
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @_currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+@code {
+  private int _currentCount;
+  private AppDbContext? _dbContext;
+  private CounterItem? _counter;
+
+  protected override async Task OnInitializedAsync()
+  {
+    _dbContext = await DbContextFactory.CreateDbContextAsync();
+    _counter = await _dbContext.Counters
+      .OrderBy(x => x.Id).FirstOrDefaultAsync();
+
+    _currentCount = _counter?.CurrentCount ?? 0;
+  }
+
+  private void IncrementCount()
+  {
+    _currentCount++;
+
+    if (_counter == null)
+    {
+      return;
+    }
+
+    _counter.CurrentCount = _currentCount;
+    _dbContext?.SaveChanges();
+  }
+
+  public void Dispose() => _dbContext?.Dispose();
+}

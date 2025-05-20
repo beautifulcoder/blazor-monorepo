@@ -1,0 +1,68 @@
+@page "/weather"
+@attribute [StreamRendering]
+@using DataAccess
+@using Microsoft.EntityFrameworkCore
+@implements IDisposable
+@inject IDbContextFactory<AppDbContext> DbContextFactory
+
+<PageTitle>Weather</PageTitle>
+
+<h1>Weather</h1>
+
+<p>This component demonstrates showing data.</p>
+
+@if (_forecasts == null)
+{
+  <p><em>Loading...</em></p>
+}
+else
+{
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th aria-label="Temperature in Celsius">Temp. (C)</th>
+        <th aria-label="Temperature in Fahrenheit">Temp. (F)</th>
+        <th>Summary</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach (var forecast in _forecasts)
+      {
+        <tr>
+          <td>@forecast.Date.ToShortDateString()</td>
+          <td>@forecast.TemperatureC</td>
+          <td>@forecast.TemperatureF</td>
+          <td>@forecast.Summary</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
+
+@code {
+  private Forecast[]? _forecasts;
+  private AppDbContext? _dbContext;
+
+  protected override async Task OnInitializedAsync()
+  {
+    _dbContext = await DbContextFactory.CreateDbContextAsync();
+
+    _forecasts = await _dbContext.WeatherForecasts
+      .Select(x => new Forecast(
+        x.Date,
+        x.TemperatureC,
+        x.Summary))
+      .ToArrayAsync();
+  }
+
+  public void Dispose() => _dbContext?.Dispose();
+
+  private record Forecast(
+    DateOnly Date,
+    int TemperatureC,
+    string? Summary)
+  {
+    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+  }
+}
