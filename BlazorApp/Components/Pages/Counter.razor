@@ -12,7 +12,7 @@
 
 <p role="status">Current count: @_currentCount</p>
 
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+<button class="btn btn-primary" @onclick="IncrementCountAsync">Click me</button>
 
 @code {
   private int _currentCount;
@@ -28,17 +28,16 @@
     _currentCount = _counter?.CurrentCount ?? 0;
   }
 
-  private void IncrementCount()
+  private async Task IncrementCountAsync()
   {
-    _currentCount++;
-
-    if (_counter == null)
+    if (_counter is null || _dbContext is null)
     {
       return;
     }
 
+    _currentCount++;
     _counter.CurrentCount = _currentCount;
-    _dbContext?.SaveChanges();
+    await _dbContext.SaveChangesAsync();
   }
 
   public void Dispose() => _dbContext?.Dispose();
